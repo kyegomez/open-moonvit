@@ -3,7 +3,6 @@ import torch
 from open_moonvit.main import MLPProjector, MoonViT, MoonViTConfig
 
 # Tiny end-to-end check: two mixed-size fake images through MoonViT and the projector.
-# Use a tiny config so CPU smoke tests stay fast.
 cfg = MoonViTConfig(
     hidden_size=64,
     intermediate_size=128,
