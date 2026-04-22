@@ -56,11 +56,6 @@ from open_moonvit.main import (
     apply_rotary_2d,
 )
 
-
-# ---------------------------------------------------------------------------
-# Loguru configuration
-# ---------------------------------------------------------------------------
-
 logger.remove()
 logger.add(
     sys.stderr,

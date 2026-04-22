@@ -34,9 +34,15 @@ This is an ultra-simple, single-file PyTorch implementation of <a href="https://
 ## Install
 
 ```bash
+$ pip install open-moonvit
+```
+
+Or from source:
+
+```bash
 $ git clone https://github.com/kyegomez/open-moonvit
 $ cd open-moonvit
-$ pip install torch
+$ pip install -e .
 ```
 
 FlashAttention is optional. If `flash_attn` is importable and you're on CUDA, the var-length kernel is used automatically. Otherwise a block-diagonal SDPA fallback runs on CPU / MPS / CUDA with no extra dependencies.
@@ -49,7 +55,7 @@ $ pip install flash-attn --no-build-isolation  # optional
 
 ```python
 import torch
-from main import MoonViT, MoonViTConfig, MLPProjector
+from open_moonvit import MoonViT, MoonViTConfig, MLPProjector
 
 encoder = MoonViT(MoonViTConfig())    # ~413M params, SigLIP-SO-400M defaults
 

@@ -1,0 +1,63 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.poetry]
+name = "open-moonvit"
+version = "0.2.0"
+description = "Open-source PyTorch reference implementation of MoonViT, the native-resolution vision encoder from the Kimi-VL Technical Report (arXiv:2504.07491)"
+license = "MIT"
+authors = ["Kye Gomez <kye@swarms.world>"]
+homepage = "https://github.com/The-Swarm-Corporation/open-moonvit"
+documentation = "https://github.com/The-Swarm-Corporation/open-moonvit/blob/main/README.md"
+readme = "README.md"
+repository = "https://github.com/The-Swarm-Corporation/open-moonvit"
+packages = [{include = "open_moonvit"}]
+keywords = [
+    "artificial intelligence",
+    "deep learning",
+    "vision transformer",
+    "vision encoder",
+    "multimodal",
+    "native resolution",
+    "NaViT",
+    "rotary positional embedding",
+    "SigLIP",
+    "Kimi-VL",
+    "MoonViT",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+]
+
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+torch = ">=2.1.0"
+loguru = ">=0.7.0"
+
+[tool.poetry.extras]
+flash = ["flash-attn"]
+
+[tool.poetry.dependencies.flash-attn]
+version = ">=2.5.0"
+optional = true
+
+
+[tool.poetry.group.lint.dependencies]
+ruff = ">=0.5.1"
+
+[tool.poetry.group.test.dependencies]
+pytest = ">=8.1.1"
+
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
