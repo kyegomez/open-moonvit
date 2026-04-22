@@ -29,7 +29,7 @@
   </a>
 </p>
 
-This is a single-file implementation of <a href="https://arxiv.org/abs/2504.07491">MoonViT</a>, the native-resolution vision encoder from Kimi-VL, in PyTorch. It closely follows the architecture described in the paper. I created this implementation because I find MoonViT to be an elegant and practical ViT variant.
+This is an ultra-simple, single-file PyTorch implementation of <a href="https://arxiv.org/abs/2504.07491">MoonViT</a>, the native-resolution vision encoder from Kimi-VL.
 
 ## Install
 

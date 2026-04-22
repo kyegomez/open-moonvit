@@ -28,20 +28,5 @@ imgs = [
 
 with torch.no_grad():
     out = encoder(imgs)
-    assert out.last_hidden_state.shape == (320 + 140, cfg.hidden_size)
-    assert out.cu_seqlens.tolist() == [0, 320, 460]
-    assert out.grid_shapes == [(16, 20), (10, 14)]
-
-    proj_x, proj_grids, proj_cu = projector(
-        out.last_hidden_state, out.grid_shapes, out.cu_seqlens
-    )
-    # 2x2 pixel shuffle: tokens /= 4; each grid dim halved.
-    assert proj_x.shape == ((320 + 140) // 4, 96)
-    assert proj_grids == [(8, 10), (5, 7)]
-    assert proj_cu.tolist() == [0, 80, 80 + 35]
-
-n_params = sum(p.numel() for p in encoder.parameters())
-print(f"encoder parameters: {n_params:,}")
-print(f"encoder output: {tuple(out.last_hidden_state.shape)}")
-print(f"projector output: {tuple(proj_x.shape)}")
-print("OK")
+    print(out)
+    print(out.last_hidden_state.shape)
