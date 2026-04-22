@@ -1,10 +1,12 @@
 ## MoonViT - Pytorch
 
+![Model Architecture](model_arch.png)
+
 <p align="left">
-  <a href="https://pypi.org/project/open-mythos/" target="_blank">
+  <a href="https://pypi.org/project/open-moonvit/" target="_blank">
     <picture>
-      <source srcset="https://img.shields.io/pypi/v/open-mythos?style=for-the-badge&color=3670A0" media="(prefers-color-scheme: dark)">
-      <img alt="Version" src="https://img.shields.io/pypi/v/open-mythos?style=for-the-badge&color=3670A0">
+      <source srcset="https://img.shields.io/pypi/v/open-moonvit?style=for-the-badge&color=3670A0" media="(prefers-color-scheme: dark)">
+      <img alt="Version" src="https://img.shields.io/pypi/v/open-moonvit?style=for-the-badge&color=3670A0">
     </picture>
   </a>
   <a href="https://twitter.com/kyegomezb/">
@@ -27,11 +29,7 @@
   </a>
 </p>
 
-Implementation of <a href="https://arxiv.org/abs/2504.07491">MoonViT</a>, the native-resolution vision encoder from Kimi-VL, in Pytorch. A single file, ~500 lines, faithful to the paper.
-
-The premise is simple and (in my opinion) right: stop torturing images into 224×224 squares, stop the sub-image splitting and splicing dance from LLaVA-OneVision, and just let the ViT see the image at whatever resolution it arrives in. MoonViT does this by borrowing <a href="https://arxiv.org/abs/2307.06304">NaViT</a>'s packing trick — patches from many differently-shaped images are flattened and concatenated into one 1D sequence, and variable-length attention (via `cu_seqlens`) keeps tokens from attending across image boundaries. Positions are handled by both the interpolated SigLIP abs-pos-embed *and* a 2D rotary embedding across height and width. Both. Additively. The paper is explicit about this.
-
-Why bother reimplementing it? Because it is a genuinely nice recipe for a ViT: SigLIP-SO-400M as a starting point, packing for throughput, 2D RoPE so high-resolution generalization doesn't degrade, and a tiny pixel-shuffle + MLP to hand tokens off to an LLM. 400M parameters that happily swallow 3.2 million pixels per image. Good building block.
+This is a single-file implementation of <a href="https://arxiv.org/abs/2504.07491">MoonViT</a>, the native-resolution vision encoder from Kimi-VL, in PyTorch. It closely follows the architecture described in the paper. I created this implementation because I find MoonViT to be an elegant and practical ViT variant.
 
 ## Install
 
@@ -41,7 +39,7 @@ $ cd open-moonvit
 $ pip install torch
 ```
 
-FlashAttention is optional — if `flash_attn` is importable and you're on CUDA, the var-length kernel is used automatically. Otherwise a block-diagonal SDPA fallback runs on CPU / MPS / CUDA with no extra dependencies.
+FlashAttention is optional. If `flash_attn` is importable and you're on CUDA, the var-length kernel is used automatically. Otherwise a block-diagonal SDPA fallback runs on CPU / MPS / CUDA with no extra dependencies.
 
 ```bash
 $ pip install flash-attn --no-build-isolation  # optional
@@ -55,7 +53,7 @@ from main import MoonViT, MoonViTConfig, MLPProjector
 
 encoder = MoonViT(MoonViTConfig())    # ~413M params, SigLIP-SO-400M defaults
 
-# a batch of images at different resolutions — no padding, no resizing
+# a batch of images at different resolutions, no padding, no resizing
 images = [
     torch.randn(3, 224, 280),
     torch.randn(3, 140, 196),
@@ -68,7 +66,7 @@ out.cu_seqlens           # (4,) int32        image boundaries in the packed seq
 out.grid_shapes          # [(16,20), (10,14), (24,24)]
 ```
 
-To feed an LLM, compose with the MLP projector — 2×2 pixel-shuffle then a two-layer MLP:
+To feed an LLM, compose with the MLP projector (2×2 pixel-shuffle then a two-layer MLP):
 
 ```python
 projector = MLPProjector(
@@ -100,7 +98,7 @@ Four things to internalize:
 1. **Packing, not padding.** Images of different shapes become one long sequence. No wasted compute on pad tokens.
 2. **Two positional embeddings, added together.** The paper is insistent on this. Interpolated SigLIP absolute pos embed preserves the pretrained prior; 2D RoPE supplies the fine-grained, resolution-robust signal.
 3. **Varlen attention is what makes (1) safe.** `cu_seqlens` slices the packed sequence so image *i* only attends to itself. FlashAttention does this in one kernel; the fallback loops per-image over SDPA.
-4. **The projector lives outside the encoder.** Pixel shuffle is a 2×2 space-to-depth — four tokens become one, channels 4×. Then a plain two-layer MLP projects into LLM space.
+4. **The projector lives outside the encoder.** Pixel shuffle is a 2×2 space-to-depth: four tokens become one, channels 4×. Then a plain two-layer MLP projects into LLM space.
 
 ## Citations
 
@@ -140,3 +138,7 @@ Four things to internalize:
     year    = {2021}
 }
 ```
+
+# License
+
+APACHE License 2.0
