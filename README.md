@@ -84,40 +84,26 @@ tokens, grids, cu = projector(out.last_hidden_state, out.grid_shapes, out.cu_seq
 tokens.shape   # (L_total // 4, 2048)
 ```
 
-```mermaid
-flowchart LR
-    subgraph in["Input — 3 images at native resolution"]
-        direction TB
-        i1["(3, 224, 280)"]
-        i2["(3, 140, 196)"]
-        i3["(3, 336, 336)"]
-    end
-
-    pe["PatchEmbed\nConv2d k=14 s=14\ngrids: (16,20) · (10,14) · (24,24)"]
-    ap["+ AbsPosEmbed\nbicubic interp per grid"]
-    pk["pack → cu_seqlens\n(1 036, 1 152)"]
-    tf["27× EncoderLayer\npre-norm · QKV-bias\n2D RoPE + varlen attn"]
-    ln["post LayerNorm\n(1 036, 1 152)"]
-    ps["PixelShuffle2x\n2×2 blocks → ÷4 tokens ×4 ch\n(259, 4 608)"]
-    ml["2-layer MLP\n(259, D_llm)"]
-    out["LLM tokens\nready for language model"]
-
-    in --> pe --> ap --> pk --> tf --> ln --> ps --> ml --> out
-```
-
 ## How it works
 
 ```mermaid
 flowchart TD
-    A["list of native-res images<br/>(3, H_i, W_i)"] --> B["patch embed<br/>Conv2d stride=14"]
-    B --> C["+ interpolated<br/>SigLIP abs-pos-embed<br/>(bicubic, per image)"]
-    C --> D["flatten &amp; pack<br/>→ (L_total, D)<br/>cu_seqlens tracks boundaries"]
-    D --> E["27× Transformer block<br/>pre-norm · QKV-bias"]
-    E -.->|inside attn| F["2D RoPE<br/>head_dim/2 for H<br/>head_dim/2 for W"]
-    E -.->|inside attn| G["varlen attention<br/>FlashAttn or<br/>block-diagonal SDPA"]
-    E --> H["post LayerNorm"]
-    H --> I["MLP Projector<br/>2×2 pixel-shuffle · 2-layer MLP"]
-    I --> J["LLM-space tokens<br/>(L_total/4, D_llm)"]
+    A([Images]) --> B[MoonViTPatchEmbed]
+    B --> C[AbsolutePosEmbedInterpolator]
+
+    subgraph enc[MoonViT]
+        C --> D[MoonViTEncoderLayer × 27]
+        R[RotaryEmbedding2D] -.-> D
+        D --> LN[post LayerNorm]
+    end
+
+    LN --> PS[PixelShuffle2x]
+
+    subgraph proj[MLPProjector]
+        PS --> MLP[Linear · Act · Linear]
+    end
+
+    MLP --> OUT([LLM Tokens])
 ```
 
 Four things to internalize:
