@@ -84,6 +84,27 @@ tokens, grids, cu = projector(out.last_hidden_state, out.grid_shapes, out.cu_seq
 tokens.shape   # (L_total // 4, 2048)
 ```
 
+```mermaid
+flowchart LR
+    subgraph in["Input — 3 images at native resolution"]
+        direction TB
+        i1["(3, 224, 280)"]
+        i2["(3, 140, 196)"]
+        i3["(3, 336, 336)"]
+    end
+
+    pe["PatchEmbed\nConv2d k=14 s=14\ngrids: (16,20) · (10,14) · (24,24)"]
+    ap["+ AbsPosEmbed\nbicubic interp per grid"]
+    pk["pack → cu_seqlens\n(1 036, 1 152)"]
+    tf["27× EncoderLayer\npre-norm · QKV-bias\n2D RoPE + varlen attn"]
+    ln["post LayerNorm\n(1 036, 1 152)"]
+    ps["PixelShuffle2x\n2×2 blocks → ÷4 tokens ×4 ch\n(259, 4 608)"]
+    ml["2-layer MLP\n(259, D_llm)"]
+    out["LLM tokens\nready for language model"]
+
+    in --> pe --> ap --> pk --> tf --> ln --> ps --> ml --> out
+```
+
 ## How it works
 
 ```mermaid

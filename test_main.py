@@ -584,5 +584,6 @@ class TestGetActivation:
         with pytest.raises(ValueError, match="Unsupported activation"):
             _get_activation("no_such_activation")
 
+
 if __name__ == "__main__":
     pytest.main(["-v", __file__])
