@@ -106,6 +106,28 @@ Four things to internalize:
 3. **Varlen attention is what makes (1) safe.** `cu_seqlens` slices the packed sequence so image *i* only attends to itself. FlashAttention does this in one kernel; the fallback loops per-image over SDPA.
 4. **The projector lives outside the encoder.** Pixel shuffle is a 2×2 space-to-depth: four tokens become one, channels 4×. Then a plain two-layer MLP projects into LLM space.
 
+## Why MoonViT over a standard ViT
+
+Standard ViTs (ViT-B/L, CLIP ViT, SigLIP) were designed for fixed-resolution square inputs. MoonViT removes that constraint in three meaningful ways:
+
+**1. No forced resizing or padding**
+A standard ViT requires every image to be the same size (e.g. 224×224 or 384×384). To accommodate different aspect ratios you either stretch the image (distorts content) or pad with zeros (wastes compute). MoonViT tokenizes each image at its native `(H, W)` and discards nothing — a 1920×1080 screenshot and a 400×600 portrait can coexist in the same batch without any resizing.
+
+**2. Zero padding tokens in the batch**
+Standard batching pads shorter sequences to the length of the longest. In vision that can mean >50% of the tokens in a batch are meaningless pad values. MoonViT packs all images end-to-end into one flat sequence and uses `cu_seqlens` to mark boundaries, so every token that enters the Transformer carries real signal. This is the NaViT packing strategy applied to a production encoder.
+
+**3. Dual positional encoding that survives resolution changes**
+Most ViTs use a single learnable absolute positional embedding fixed to the pretraining grid size. At inference on a differently-sized image that table has to be interpolated, and fidelity degrades. MoonViT adds a second encoding — 2D RoPE — whose H and W rotation frequencies are computed fresh for every grid size at inference time. The absolute embed preserves the pretrained prior; the RoPE provides the resolution-robust spatial signal. Neither alone is sufficient; both together is what the Kimi-VL paper demonstrates works at scale.
+
+| Property | Standard ViT | MoonViT |
+| --- | --- | --- |
+| Input resolution | Fixed (e.g. 224×224) | Arbitrary `(H, W)` per image |
+| Aspect ratio handling | Squash or crop | Native, lossless |
+| Batch padding tokens | Up to majority of batch | Zero |
+| Positional encoding | Absolute (interpolated) | Absolute + 2D RoPE |
+| Cross-image attention leakage | N/A (one image) | Impossible — `cu_seqlens` enforces isolation |
+| Token count to LLM | `H/p × W/p` | `H/p × W/p ÷ 4` (after pixel-shuffle projector) |
+
 ## Citations
 
 ```bibtex
