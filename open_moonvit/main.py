@@ -433,8 +433,8 @@ class RotaryEmbedding2D(nn.Module):
         sin : Tensor
             Same shape and device as ``cos``.
         """
-        cos_chunks: List[Tensor] = []
-        sin_chunks: List[Tensor] = []
+        cos_chunks = []
+        sin_chunks = []
         for gh, gw in grid_shapes:
             h_pos = torch.arange(gh, device=device)
             w_pos = torch.arange(gw, device=device)
@@ -577,7 +577,7 @@ def _varlen_sdpa(
         Shape ``(L_total, num_heads, head_dim)``. Concatenation of per-image
         attention outputs in the original packed order.
     """
-    outputs: List[Tensor] = []
+    outputs = []
     for i in range(cu_seqlens.numel() - 1):
         s = int(cu_seqlens[i].item())
         e = int(cu_seqlens[i + 1].item())
@@ -1011,9 +1011,9 @@ class MoonViT(nn.Module):
         if len(pixel_values_list) == 0:
             raise ValueError("pixel_values_list must contain at least one image")
 
-        patch_chunks: List[Tensor] = []
-        grid_shapes: List[Tuple[int, int]] = []
-        seqlens: List[int] = []
+        patch_chunks = []
+        grid_shapes = []
+        seqlens = []
 
         for img in pixel_values_list:
             patches, gh, gw = self.patch_embed(img)  # (N, D)
@@ -1198,9 +1198,9 @@ class MLPProjector(nn.Module):
             Updated cumulative sequence lengths for the compressed token
             sequence, shape ``(num_images + 1,)``, dtype int32.
         """
-        chunks: List[Tensor] = []
-        new_grids: List[Tuple[int, int]] = []
-        new_seqlens: List[int] = []
+        chunks = []
+        new_grids = []
+        new_seqlens = []
         for i, (gh, gw) in enumerate(grid_shapes):
             s = int(cu_seqlens[i].item())
             e = int(cu_seqlens[i + 1].item())
